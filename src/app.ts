@@ -19,13 +19,18 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 
 // middleware
-// app.use("/api/v1/users", authenticateUser);
+import userAuth from "./middleware/userAuth.middleware";
+
+app.use("/api/v1/polls", userAuth);
 
 // routes import
 import welcomeRoute from "./routes/welcome.route";
 import userRouter from "./routes/user.route";
+import router from "./routes/poll.route";
 
 app.use("/api/", welcomeRoute);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/polls", router);
+
 
 export default app;

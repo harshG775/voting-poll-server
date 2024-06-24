@@ -27,7 +27,7 @@ model User {
     role     Role    @default(USER)
     verified Boolean @default(false)
 
-    refreshToken String
+    refreshToken String @unique
 
     //  relations
     polls Poll[]
