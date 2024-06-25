@@ -66,9 +66,29 @@ export const createPoll = asyncPromiseHandler(
 
 export const getPolls = asyncHandler(async (req: Request, res: Response) => {
     const user = req.user;
-    const polls = await prisma.poll.findMany({
+    const { offset, limit, order } = req.query; //?offset=0&limit=10&order=asc
+    let polls = null;
+    if (offset && !limit) {
+        polls = await prisma.poll.findMany({
+            where: {
+                createdBy: { id: user.id },
+            },
+            skip: 0,
+            take: 10,
+        });
+    }
+    polls = await prisma.poll.findMany({
         where: {
             createdBy: { id: user.id },
+        },
+        ...(offset && {
+            skip: Number(offset),
+        }),
+        ...(limit && {
+            take: Number(limit),
+        }),
+        orderBy: {
+            ...(order && { createdAt: order === "asc" ? "asc" : "desc" }),
         },
     });
     if (polls === null) {
