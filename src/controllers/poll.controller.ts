@@ -3,6 +3,7 @@ import { asyncPromiseHandler } from "../utils/asyncHandler";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { clientError, success } from "../utils/httpStatus";
+import ApiError from "../errors/ApiError";
 
 export const prisma = new PrismaClient();
 const pollSchema = z.object({
@@ -24,9 +25,7 @@ export const createPoll = asyncPromiseHandler(
         
         const pollData = pollSchema.safeParse(poll);
         if (!pollData.success) {
-            return res.status(clientError.BadRequest).json({
-                message: pollData.error?.errors[0].message,
-            });
+            throw new ApiError( clientError.BadRequest, pollData.error?.errors[0].message );
         }
 
         const newPoll = await prisma.poll.create({
@@ -51,9 +50,7 @@ export const createPoll = asyncPromiseHandler(
         });
         
         if (newPoll === null) {
-            return res.status(clientError.Conflict).json({
-                message: "Poll was not created",
-            });
+            throw new ApiError(clientError.Conflict, "Poll was not created");
         }
 
         return res.status(success.Created).json({
