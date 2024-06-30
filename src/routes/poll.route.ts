@@ -10,6 +10,6 @@ router.route("/:pollId").delete(deletePoll);
 
 
 // vote
-router.route("/:id/vote").post();
+router.route("/:pollId/vote").post();
 
 export default router;

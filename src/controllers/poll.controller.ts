@@ -157,8 +157,62 @@ export const deletePoll = asyncHandler(async (req: Request, res: Response) => {
 });
 
 // vote
-export const createVote = asyncHandler(async (req: Request, res: Response) => {
+// router.route("/:pollId/vote").post();
+export const vote = asyncHandler(async (req: Request, res: Response) => {
     const user = req.user;
-    const poll = req.body.poll;
-    const option = req.body.option;
+    const pollId = req.params.pollId;
+    const optionId = req.body.optionId;
+    const poll = await prisma.poll.findUnique({
+        where: {
+            id: pollId,
+            createdById: user.id,
+        },
+        include: {
+            options: true,
+        },
+    });
+    if (poll === null) {
+        throw new ApiError(clientError.NotFound, "Poll not found");
+    }
+    // find if user has already voted
+    const vote = await prisma.vote.findFirst({
+        where: {
+            userId: user.id,
+            pollId: pollId,
+            optionId: optionId,
+        },
+    })
+    //if user has already voted c update the vote
+    if (vote !== null) {
+        const updatedVote = await prisma.vote.update({
+            where: {
+                id: vote.id,
+            },
+            data: {
+                optionId: optionId,
+            },
+        });
+        if (updatedVote === null) {
+            throw new ApiError(clientError.Conflict, "Vote was not updated");
+        }
+        return res.status(success.OK).json({
+            message: "Vote was updated",
+            data: updatedVote,
+        });
+    }
+    const newVote = await prisma.vote.create({
+        data: {
+            userId: user.id,
+            pollId: pollId,
+            optionId: optionId,
+        },
+    });
+    if (newVote === null) {
+        throw new ApiError(clientError.Conflict, "Vote was not created");
+    }
+
+    return res.status(success.Created).json({
+        message: "Vote was created",
+        data: newVote,
+    });
 });
