@@ -115,10 +115,15 @@ export const login = asyncPromiseHandler(
 );
 
 export const userSession = asyncHandler(async (req: Request, res: Response) => {
-    const refreshToken = req.body.token;
-    if (!refreshToken) {
-        throw new ApiError(clientError.Unauthorized, "Token missing");
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || typeof authHeader !== "string") {
+        throw new ApiError(
+            clientError.Unauthorized,
+            "Authorization header missing or invalid"
+        );
     }
+    const refreshToken: string = authHeader.split(" ")[1];
 
     const user = await prisma.user.findUnique({
         where: { refreshToken: refreshToken },
