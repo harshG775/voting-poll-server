@@ -3,7 +3,8 @@ import { PrismaClient, Role, User } from "@prisma/client";
 import { z } from "zod";
 
 import { success, clientError } from "../utils/httpStatus";
-import { asyncPromiseHandler } from "../utils/asyncHandler";
+import { asyncHandler, asyncPromiseHandler } from "../utils/asyncHandler";
+import ApiError from "../errors/ApiError";
 
 export const prisma = new PrismaClient();
 const userSchema = z.object({
@@ -112,6 +113,27 @@ export const login = asyncPromiseHandler(
         });
     }
 );
+
+export const userSession = asyncHandler(async (req: Request, res: Response) => {
+    const refreshToken = req.body.token;
+    if (!refreshToken) {
+        throw new ApiError(clientError.Unauthorized, "Token missing");
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { refreshToken: refreshToken },
+    });
+    if (!user) {
+        throw new ApiError(clientError.NotFound, "User not found");
+    }
+    if (!user.verified) {
+        throw new ApiError(clientError.Unauthorized, "User not verified");
+    }
+    return res.status(success.OK).json({
+        message: "user logged in",
+        user: user,
+    });
+});
 
 // Create
 import bcrypt from "bcrypt";
